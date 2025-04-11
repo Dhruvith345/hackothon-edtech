@@ -1,0 +1,113 @@
+<!-- templates/results.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Results</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .score-badge { font-size: 1.2rem; padding: 0.5rem 1rem; }
+        .result-card { border-left: 4px solid #0d6efd; }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card shadow">
+                    <div class="card-header bg-success text-white">
+                        <h2 class="mb-0">Analysis Results</h2>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>{{ analysis.filename }}</span>
+                            <span class="score-badge bg-white text-dark">
+                                Total Score: {{ analysis.total_score }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body">
+                        <!-- Competitions -->
+                        <div class="mb-5">
+                            <h4 class="mb-4"><i class="bi bi-trophy"></i> Competitions</h4>
+                            {% for comp in competitions %}
+                            <div class="card result-card mb-3">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h5>{{ comp.title }}</h5>
+                                            <div class="text-muted">{{ comp.rank }}</div>
+                                        </div>
+                                        <div class="col-md-6 text-end">
+                                            {% if comp.medal %}
+                                            <span class="badge bg-warning">{{ comp.medal }}</span>
+                                            {% endif %}
+                                            <span class="badge bg-primary">+{{ comp.score }} pts</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info">No competitions found</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Contributions -->
+                        <div class="mb-5">
+                            <h4 class="mb-4"><i class="bi bi-bar-chart"></i> Contributions</h4>
+                            {% for contrib in contributions %}
+                            <div class="card result-card mb-3">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h5>{{ contrib.title }}</h5>
+                                            <div class="text-muted">{{ contrib.type|title }}</div>
+                                        </div>
+                                        <div class="col-md-6 text-end">
+                                            <span class="badge bg-info">{{ contrib.upvotes }} upvotes</span>
+                                            <span class="badge bg-success">+{{ contrib.score }} pts</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info">No contributions found</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Courses -->
+                        <div class="mb-4">
+                            <h4 class="mb-4"><i class="bi bi-journal-bookmark"></i> Courses</h4>
+                            <div class="row g-3">
+                                {% for course in courses %}
+                                <div class="col-md-4">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h6>{{ course.title }}</h6>
+                                            <div class="text-muted small">{{ course.completed_at }}</div>
+                                            <span class="badge bg-primary mt-2">+{{ course.score }} pts</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="col-12">
+                                    <div class="alert alert-info">No courses found</div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-5">
+                            <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">
+                                <i class="bi bi-arrow-left"></i> Back to Home
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
