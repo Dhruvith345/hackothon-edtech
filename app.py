@@ -1,156 +1,121 @@
-import os
-import json
-import logging
-from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, send_file
 from flask_sqlalchemy import SQLAlchemy
-from flask_wtf import FlaskForm
-from wtforms import StringField, SelectField, SubmitField, validators
-import google.generativeai as genai
-from dotenv import load_dotenv
+from io import BytesIO
 
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-load_dotenv()
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///roadmaps.db'
+app.config['SECRET_KEY'] = 'your_secret_key_here'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///application.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash')
-
 db = SQLAlchemy(app)
 
-class Roadmap(db.Model):
+class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(100), nullable=False)
-    skills = db.Column(db.String(500), nullable=False)
-    proficiency = db.Column(db.String(50), nullable=False)
-    goal = db.Column(db.String(100), nullable=False)
-    generated_content = db.Column(db.JSON, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    full_name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    self_declaration = db.Column(db.Text)
+    courses = db.relationship('Course', backref='user', cascade='all, delete-orphan')
+    quizzes = db.relationship('Quiz', backref='user', cascade='all, delete-orphan')
+    resumes = db.relationship('Resume', backref='user', cascade='all, delete-orphan')
 
-class AssessmentForm(FlaskForm):
-    name = StringField('Your Name', [validators.DataRequired()])
-    email = StringField('Email', [validators.DataRequired(), validators.Email()])
-    skills = StringField('Your Skills (comma separated)', [validators.DataRequired()])
-    proficiency = SelectField('Proficiency Level', choices=[
-        ('beginner', '🚀 Beginner'), 
-        ('intermediate', '🎯 Intermediate'),
-        ('advanced', '🔥 Advanced')
-    ])
-    goal = SelectField('Career Goal', choices=[
-        ('data_analyst', '📊 Data Analyst'),
-        ('data_scientist', '🔬 Data Scientist'),
-        ('data_engineer', '⚙️ Data Engineer')
-    ])
-    submit = SubmitField('Generate Roadmap')
+class Course(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    course_name = db.Column(db.String(150), nullable=False)
+    year_completed = db.Column(db.Integer, nullable=False)
 
-def generate_gemini_roadmap(skills, proficiency, goal):
-    prompt = f"""
-    Create a detailed 1-year learning roadmap for a {proficiency} level professional 
-    aiming to become a {goal}. Current skills: {skills}.
-    
-    Provide output in this EXACT JSON format without any markdown:
-    {{
-        "roadmap": {{
-            "Month1": {{
-                "focus": "Focus area title",
-                "topics": ["list", "of", "topics"],
-                "resources": ["resource1", "resource2"],
-                "projects": ["project1", "project2"]
-            }},
-            "Month2": {{...}},
-            "Month3": {{...}}
-        }},
-        "certifications": ["cert1", "cert2"],
-        "skill_gaps": ["gap1", "gap2"]
-    }}
-    
-    Requirements:
-    1. Use double quotes only
-    2. No markdown formatting
-    3. Include 3-5 items per list
-    4. Make projects actionable
-    5. List real certifications
-    """
+class Quiz(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    question = db.Column(db.String(255), nullable=False)
+    answer = db.Column(db.String(255), nullable=False)
 
-    try:
-        response = model.generate_content(prompt)
-        
-        # Clean response text
-        response_text = response.text.strip().replace('```json', '').replace('```', '')
-        
-        # Validate and parse JSON
-        roadmap_data = json.loads(response_text)
-        
-        # Validate structure
-        required_keys = ['roadmap', 'certifications', 'skill_gaps']
-        if not all(key in roadmap_data for key in required_keys):
-            raise ValueError("Invalid roadmap structure")
-            
-        return roadmap_data
-        
-    except json.JSONDecodeError as e:
-        logger.error(f"JSON Decode Error: {str(e)}\nResponse: {response_text}")
-        return None
-    except Exception as e:
-        logger.error(f"Roadmap generation failed: {str(e)}")
-        return None
+class Resume(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    filename = db.Column(db.String(255))
+    data = db.Column(db.LargeBinary)
+    mimetype = db.Column(db.String(50))
+
+with app.app_context():
+    db.create_all()
 
 @app.route('/', methods=['GET', 'POST'])
-def home():
-    form = AssessmentForm()
-    if form.validate_on_submit():
+def index():
+    user_id = session.get('user_id')
+    user = User.query.get(user_id) if user_id else None
+
+    if request.method == 'POST':
+        if user:
+            # Update existing user
+            user.full_name = request.form['full_name']
+            user.email = request.form['email']
+            user.self_declaration = request.form['self_declaration']
+        else:
+            # Create new user
+            user = User(
+                full_name=request.form['full_name'],
+                email=request.form['email'],
+                self_declaration=request.form['self_declaration']
+            )
+            db.session.add(user)
+        
         try:
-            roadmap_data = generate_gemini_roadmap(
-                form.skills.data,
-                form.proficiency.data,
-                form.goal.data
-            )
-
-            if not roadmap_data:
-                flash('Roadmap generation failed. Please check your input and try again.', 'danger')
-                return redirect(url_for('home'))
-
-            new_roadmap = Roadmap(
-                name=form.name.data,
-                email=form.email.data,
-                skills=form.skills.data,
-                proficiency=form.proficiency.data,
-                goal=form.goal.data,
-                generated_content=roadmap_data
-            )
-            
-            db.session.add(new_roadmap)
             db.session.commit()
-            session['roadmap_id'] = new_roadmap.id
-            return redirect(url_for('roadmap'))
-
+            session['user_id'] = user.id
         except Exception as e:
             db.session.rollback()
-            logger.error(f"Database error: {str(e)}")
-            flash('A system error occurred. Please try again.', 'danger')
-
-    return render_template('index.html', form=form)
-
-@app.route('/roadmap')
-def roadmap():
-    roadmap_id = session.get('roadmap_id')
-    if not roadmap_id:
-        flash('No roadmap found. Please complete the assessment first.', 'warning')
-        return redirect(url_for('home'))
+            print(f"Error: {e}")
+        
+        return redirect(url_for('index'))
     
-    roadmap = Roadmap.query.get(roadmap_id)
-    return render_template('roadmap.html', 
-                         roadmap=roadmap,
-                         content=roadmap.generated_content)
+    courses = Course.query.filter_by(user_id=user_id).all() if user else []
+    return render_template('index.html', user=user, courses=courses)
 
+@app.route('/courses', methods=['POST'])
+def add_course():
+    if 'user_id' not in session:
+        return redirect(url_for('index'))
+    
+    course = Course(
+        user_id=session['user_id'],
+        course_name=request.form['course_name'],
+        year_completed=request.form['year_completed']
+    )
+    db.session.add(course)
+    db.session.commit()
+    return redirect(url_for('index'))
+
+@app.route('/quiz')
+def submit_quiz():
+    return render_template('quiz.html')
+@app.route('/upload_resume', methods=['POST'])
+def upload_resume():
+    if 'user_id' not in session:
+        return redirect(url_for('index'))
+    
+    file = request.files['resume']
+    if file:
+        resume = Resume(
+            user_id=session['user_id'],
+            filename=file.filename,
+            data=file.read(),
+            mimetype=file.mimetype
+        )
+        db.session.add(resume)
+        db.session.commit()
+    return redirect(url_for('index'))
+
+@app.route('/download_resume/<int:resume_id>')
+def download_resume(resume_id):
+    resume = Resume.query.get_or_404(resume_id)
+    return send_file(
+        BytesIO(resume.data),
+        mimetype=resume.mimetype,
+        as_attachment=True,
+        download_name=resume.filename
+    )
+@app.route('/login', methods=['POST'])
+def login():
+    return render_template('loginpage.html')
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True)

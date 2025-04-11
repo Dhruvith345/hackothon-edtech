@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillPath Pro - Learning Roadmap Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2A2F4F;
+            --secondary-color: #917FB3;
+            --accent-color: #E5BEEC;
+            --background-color: #FDE2F3;
+        }
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            background-color: var(--background-color);
+            color: var(--primary-color);
+        }
+
+        h1, h2, h3 {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .dashboard-header p {
+            font-size: 1.1rem;
+            color: #666;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-title {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 1.3rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .card-title i {
+            color: var(--secondary-color);
+        }
+
+        .progress-section {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-top: 2rem;
+        }
+
+        .upload-section label {
+            display: block;
+            margin: 1rem 0;
+            padding: 1rem;
+            border: 2px dashed var(--accent-color);
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .upload-section label:hover {
+            background: rgba(229, 190, 236, 0.1);
+        }
+
+        button {
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+        }
+
+        .roadmap-visualization {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-top: 2rem;
+            position: relative;
+        }
+
+        .timeline {
+            position: relative;
+            padding: 2rem 0;
+        }
+
+        .timeline-item {
+            padding-left: 2rem;
+            margin-bottom: 2rem;
+            border-left: 3px solid var(--secondary-color);
+            position: relative;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 0;
+            width: 16px;
+            height: 16px;
+            background: var(--secondary-color);
+            border-radius: 50%;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .grid-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-header">
+        <h1>SkillPath Pro</h1>
+        <p>Your AI-powered learning companion that analyzes your skills through multiple inputs and creates personalized career roadmaps with curated learning resources and milestone tracking.</p>
+    </div>
+
+    <div class="grid-container">
+        <div class="dashboard-card">
+            <h3 class="card-title"><i class="fas fa-brain"></i>Skill Assessment</h3>
+            <p>Complete our adaptive quiz to evaluate your current skill level</p>
+            <button onclick="startQuiz()">Start Skill Quiz</button>
+        </div>
+
+        <div class="dashboard-card">
+            <h3 class="card-title"><i class="fas fa-cloud-upload-alt"></i>Document Analysis</h3>
+            <div class="upload-section">
+                <label>
+                    <i class="fas fa-file-upload" ></i><br>
+                    Upload Resume/CV
+                    <br>
+                    <span id="resumeFilename">No file selected</span>
+                    <input id="uploadResume" type="file" hidden>
+                </label>
+                <label>
+                    <i class="fas fa-project-diagram" ></i><br>
+                    Upload Portfolio
+                    <br>
+                    <span id="portfolioFilename">No file selected</span>
+                    <input id="uploadPortfolio" type="file" hidden>
+                </label>
+            </div>
+        </div>
+
+        <div class="dashboard-card">
+            <h3 class="card-title"><i class="fas fa-tools"></i>Manual Skills Input</h3>
+            <textarea style="height: 79px; width: 256px;" class="skill-input" placeholder="Enter skills (separated by commas)"></textarea>
+            <button onclick="processSkills()">Analyze Skills</button>
+        </div>
+    </div>
+
+    
+
+    <script>
+        document.getElementById('uploadResume').addEventListener('change', function() {
+
+            const resumeFilename = document.getElementById('resumeFilename');
+            if (this.files && this.files.length > 0) {
+                resumeFilename.textContent = this.files[0].name;
+                console.log("File selected:", this.files[0].name);
+            } else {
+                resumeFilename.textContent = 'No file selected.';
+            }
+        });
+        document.getElementById('uploadPortfolio').addEventListener('change', function() {
+            const portfolioFilename = document.getElementById('portfolioFilename');
+            if (this.files && this.files.length > 0) {
+                portfolioFilename.textContent = this.files[0].name;
+            } else {
+                portfolioFilename.textContent = 'No file selected.';
+            }
+        });
+        function startQuiz() {
+            // Quiz initialization logic
+            if(uploadResume.files && uploadResume.files.length > 0 && uploadPortfolio.files && uploadPortfolio.files.length > 0 && document.querySelector('.skill-input').value) {
+                alert('Quiz will start now!');
+            } else {
+                alert('Please upload your resume or portfolio before starting the quiz.');
+            }
+        }
+
+        function processSkills() {
+            // Skill processing logic
+            const skills = document.querySelector('.skill-input').value;
+            alert('Skills analysis would be performed here');
+        }
+    </script>
+</body>
+</html>
