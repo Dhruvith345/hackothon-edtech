@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold mb-3">
+            <i class="fas fa-map-signs me-2"></i>{{ roadmap.name }}'s Learning Journey
+        </h1>
+        <div class="d-flex justify-content-center gap-2">
+            <span class="skill-badge bg-primary">
+                <i class="fas fa-user-graduate me-2"></i>{{ roadmap.proficiency }}
+            </span>
+            <span class="skill-badge bg-success">
+                <i class="fas fa-bullseye me-2"></i>{{ roadmap.goal }}
+            </span>
+        </div>
+    </div>
+
+    <div class="roadmap-card card mb-4 highlight-card">
+        <div class="card-header bg-white">
+            <h2 class="h4 mb-0 text-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>Key Skill Gaps
+            </h2>
+        </div>
+        <div class="card-body">
+            <div class="row row-cols-1 row-cols-md-2 g-3">
+                {% for gap in content.skill_gaps %}
+                <div class="col">
+                    <div class="alert alert-warning d-flex align-items-center mb-0">
+                        <i class="fas fa-lightbulb me-3"></i>
+                        {{ gap }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        {% for month, details in content.roadmap.items() %}
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="roadmap-card card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="h5 mb-1">{{ month }}</h3>
+                    <p class="mb-0 small opacity-75">{{ details.focus }}</p>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h4 class="h6 text-primary mb-3">
+                            <i class="fas fa-book-open me-2"></i>Learning Topics
+                        </h4>
+                        <ul class="list-group list-group-flush">
+                            {% for topic in details.topics %}
+                            <li class="list-group-item small">
+                                <i class="fas fa-circle me-2 text-primary" style="font-size: 0.5rem"></i>
+                                {{ topic }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <div class="mb-4">
+                        <h4 class="h6 text-primary mb-3">
+                            <i class="fas fa-tasks me-2"></i>Hands-On Projects
+                        </h4>
+                        <ul class="list-group list-group-flush">
+                            {% for project in details.projects %}
+                            <li class="list-group-item small">
+                                <i class="fas fa-check-circle me-2 text-success"></i>
+                                {{ project }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <div class="mb-3">
+                        <h4 class="h6 text-primary mb-3">
+                            <i class="fas fa-link me-2"></i>Learning Resources
+                        </h4>
+                        <div class="list-group">
+                            {% for resource in details.resources %}
+                            <a href="{{ resource.url }}" target="_blank" 
+                               class="resource-link list-group-item list-group-item-action small">
+                                <i class="fas fa-external-link-alt me-2 text-muted"></i>
+                                {{ resource.name }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="roadmap-card card highlight-card">
+        <div class="card-header bg-white">
+            <h2 class="h4 mb-0 text-success">
+                <i class="fas fa-award me-2"></i>Recommended Certifications
+            </h2>
+        </div>
+        <div class="card-body">
+            <div class="row row-cols-1 row-cols-md-3 g-3">
+                {% for cert in content.certifications %}
+                <div class="col">
+                    <div class="card h-100 border">
+                        <div class="card-body">
+                            <h5 class="h6 mb-0">
+                                <i class="fas fa-certificate me-2 text-warning"></i>
+                                {{ cert }}
+                            </h5>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
